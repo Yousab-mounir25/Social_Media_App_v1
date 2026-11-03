@@ -5,18 +5,16 @@ import { PORT } from "./config.js";
 import { bootstrapDB } from "./DB/connection.db.js";
 import { sendEmail } from "./common/utils/Email/send.email.js";
 import { EmailSubjectEnum } from "./common/enum/email.enum.js";
+import { userController } from "./modules/user/index.js";
 const app = express()
 
 
 bootstrapDB(app , PORT)
 app.use(express.json())
 app.use('/auth' , authenticationController)
+app.use('/user' , userController)
 
-sendEmail({
-    subject:EmailSubjectEnum.CONFIRM_EMAIL,
-    to:["yousab.mounir@gmail.com"],
-    html:"Hello yousab"
-})
+
 app.all('/',(req:express.Request , res:express.Response , next:express.NextFunction):express.Response=>{
     return res.status(200).json({message:"Done"})
     

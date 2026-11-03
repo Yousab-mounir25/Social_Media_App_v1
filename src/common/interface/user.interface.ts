@@ -17,7 +17,7 @@ export interface IUser {
         gender: GenderEnum,
         role:RoleEnum,
         provider:ProviderEnum,
-        changeCredentialsTime?:string,
-        createdAt?:string,
-        updatedAt?:string
+        changeCredentialsTime?:Date,
+        createdAt?:Date,
+        updatedAt?:Date
 }

@@ -1,5 +1,5 @@
 import {z} from 'zod'
-import { confirmEmail, resendConfirmEmail, signup } from '../authentication.validation.js'
+import { confirmEmail, login, resendConfirmEmail, signup } from '../authentication.validation.js'
 
 // export interface ISignupDto{
 //     usernmae:string,
@@ -12,3 +12,4 @@ import { confirmEmail, resendConfirmEmail, signup } from '../authentication.vali
 export type SignupDto = z.infer <ReturnType<typeof signup>> //validation + DTO in one shoot
 export type ConfirmEmailDto = z.infer <ReturnType<typeof confirmEmail>>['body'] //validation + DTO in one shoot
 export type ResendConfirmEmailDto = z.infer <ReturnType<typeof resendConfirmEmail>>['body'] //validation + DTO in one shoot
+export type LoginDto = z.infer <ReturnType<typeof login >>['body'] //validation + DTO in one shoot

@@ -79,9 +79,9 @@ export abstract class DatabaseRepository<TRawDocType>{
     }:{
     id: mongoose.Types.ObjectId,
       projection?: ProjectionType<TRawDocType> | null | undefined,
-      options?: QueryOptions<TRawDocType> & {lean?:false}  | null | undefined 
+      options?: QueryOptions<TRawDocType> & {lean?:true}  | null | undefined 
 
-    }):Promise<HydratedDocument<TRawDocType> | undefined | null | FlattenMaps <TRawDocType>>
+    }):Promise<FlattenMaps<TRawDocType> | null>
 
      async findById({
      id,
@@ -90,9 +90,9 @@ export abstract class DatabaseRepository<TRawDocType>{
     }:{
      id: mongoose.Types.ObjectId
       projection?: ProjectionType<TRawDocType> | null | undefined,
-      options?: QueryOptions<TRawDocType> & {lean?:true}  | null | undefined 
+      options?: QueryOptions<TRawDocType> & {lean?:false}  | null | undefined 
 
-    }):Promise<HydratedDocument<TRawDocType> | undefined | null | FlattenMaps <TRawDocType>>
+    }): Promise<HydratedDocument<TRawDocType> | null>
 
     async findById({
      id,
@@ -112,7 +112,7 @@ export abstract class DatabaseRepository<TRawDocType>{
         if(options?.lean){
             doc.lean(options.lean )
         }
-        return await doc.exec()
+         return (await doc.exec()) as HydratedDocument<TRawDocType> | FlattenMaps<TRawDocType> | null
     }
     //lean false ===> hydrated  
 

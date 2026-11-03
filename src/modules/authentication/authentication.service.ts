@@ -1,4 +1,4 @@
-import { ConfirmEmailDto, ResendConfirmEmailDto, SignupDto } from "./DTO/authentication.dto.js";
+import { ConfirmEmailDto, LoginDto, ResendConfirmEmailDto, SignupDto } from "./DTO/authentication.dto.js";
 import { IUser } from "../../common/interface/user.interface.js";
 import { HUser, UserModel } from "../../DB/model/user.model.js";
 import { BadRequestException, ConflictException, NotFoundException, TooManyRequestException } from "../../common/exception/domain.exception.js";
@@ -12,14 +12,18 @@ import { emailEvent } from "../../common/utils/Email/email.event.js";
 import { createOtp } from './../../common/utils/index.js';
 import { encryption } from "../../common/security/encryption.security.js";
 import { ProviderEnum } from "../../common/enum/user.enum.js";
+import { tokenService, TokenService } from './../../common/services/token.services';
+import { ILoginResponse } from "./entities/auth.entities.js";
 
 export class AuthenticationService {
 
   private userRepository :UserRepository
   private cacheService:CacheService
+  private tokenService:TokenService
   constructor() {
     this.cacheService = cacheService
     this.userRepository = new UserRepository()
+    this.tokenService = tokenService
   }
   // signup = async ({username , email , password , confirmPassword}: SignupDto['body']): Promise<any> => {
   //   const user =await this.userRepository.findOne({
@@ -147,6 +151,25 @@ async resendConfirmEmail  (inputs:ResendConfirmEmailDto):Promise<void> {
 
   await this.sendEmailOtp({email,subject:EmailSubjectEnum.CONFIRM_EMAIL})
   return;
+};
+
+ async login  (inputs:LoginDto, issuer:string):Promise<ILoginResponse> {
+  const { email, password } = inputs;
+  const account = await this.userRepository.findOne({
+    filter: {
+      email,
+      provider: ProviderEnum.SYSTEM,
+      confrimEmail: { $exists: true },
+    },
+  });
+  if (!account) {
+    throw new NotFoundException("invalid login credentials"); // check for email
+  }
+  const match = await compare(password, account.password); //check for password
+  if (!match) {
+    throw new NotFoundException("invalid login credentials");
+  }
+  return await this.tokenService.createLoginCredentials({ user: account, issuer });
 };
 
 
