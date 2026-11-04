@@ -31,7 +31,7 @@ class DatabaseRepository {
         if (options?.lean) {
             doc.lean(options.lean);
         }
-        return await doc.exec();
+        return (await doc.exec());
     }
     async find({ filter, options, projection }) {
         const doc = this.model.find(filter || {});

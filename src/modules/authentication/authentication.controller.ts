@@ -6,13 +6,21 @@ import { validation } from "../../middleware/validation.middleware.js";
 import * as validators from './authentication.validation.js'
 import { IUser } from "../../common/interface/user.interface.js";
 import { getIssuer } from "../../common/utils/issuer.js";
-import { ILogin, ILoginResponse } from "./entities/auth.entities.js";
+import {  ILoginResponse, ISignupWithGoogle } from "./entities/auth.entities.js";
 const router = Router()
 
 // router.post('/signup' , async(req:Request,res:Response,next:NextFunction):Promise<Response>=>{
 //     const data = await authService.signup(req.body)
 //     return successResponse({res , status:201})
 // })
+router.post('/signup-with-gmail' , 
+    responseFormatter(
+    async(req:Request,res:Response,next:NextFunction):Promise<ISignupWithGoogle>=>{
+        const {data , status} = await authService.signupWithGmail(req.body , getIssuer(req))
+        return {data , status:201}
+    }
+)
+)
 router.post('/signup' , 
     // validation(validators.signup),
     responseFormatter(
@@ -45,9 +53,9 @@ router.patch("/resend-confirm-email" ,
 router.post("/login" , 
 validation(validators.login), 
 responseFormatter(
-    async(req:Request , res:Response , next:NextFunction):Promise<ILoginResponse>=>{
+    async(req:Request , res:Response , next:NextFunction):Promise<IResponse<ILoginResponse>>=>{
         const data = await authService.login(req.validate.body ,getIssuer(req))
-        return {data , status:200}
+        return {data , status:200 }
     }
 )
 

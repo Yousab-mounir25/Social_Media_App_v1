@@ -11,13 +11,66 @@ const email_event_js_1 = require("../../common/utils/Email/email.event.js");
 const index_js_1 = require("./../../common/utils/index.js");
 const encryption_security_js_1 = require("../../common/security/encryption.security.js");
 const user_enum_js_1 = require("../../common/enum/user.enum.js");
+const token_services_1 = require("./../../common/services/token.services");
+const google_auth_library_1 = require("google-auth-library");
+const config_js_1 = require("../../config.js");
 class AuthenticationService {
     userRepository;
     cacheService;
+    tokenService;
+    client;
     constructor() {
         this.cacheService = cache_services_1.cacheService;
         this.userRepository = new user_repository_1.UserRepository();
+        this.tokenService = token_services_1.tokenService;
+        this.client = new google_auth_library_1.OAuth2Client();
     }
+    async verifyGoogleAccount(idToken) {
+        let ticket;
+        try {
+            ticket = await this.client.verifyIdToken({
+                idToken,
+                audience: config_js_1.WEB_CLIENT_IDS,
+            });
+        }
+        catch (error) {
+            throw new domain_exception_js_1.UnAuthorizedException("invalid google token");
+        }
+        const payload = ticket.getPayload();
+        if (!payload?.email_verified) {
+            throw new domain_exception_js_1.BadRequestException("not verified email");
+        }
+        return payload;
+    }
+    async signupWithGmail({ idToken }, issuer) {
+        const { email, name, picture } = await this.verifyGoogleAccount(idToken);
+        const existAccount = await this.userRepository.findOne({
+            filter: { email: email },
+        });
+        if (existAccount) {
+            if (existAccount.provider != user_enum_js_1.ProviderEnum.GOOGLE) {
+                throw new domain_exception_js_1.ConflictException("invalid account provider");
+            }
+            return {
+                status: 200,
+                data: await this.tokenService.createLoginCredentials({ user: existAccount, issuer }),
+            };
+        }
+        const user = await this.userRepository.create({
+            data: {
+                email,
+                username: name,
+                image: picture,
+                confirmEmail: new Date(),
+                provider: user_enum_js_1.ProviderEnum.GOOGLE,
+            },
+        });
+        return {
+            status: 201,
+            data: await this.tokenService.createLoginCredentials({ user, issuer }),
+        };
+    }
+    ;
     async sendEmailOtp({ email, subject, expiresIn = 120, maxTrials = 3, blockIn = 300 }) {
         const existOtp_ttl = await this.cacheService.ttl({ key: (0, send_email_js_1.userEmailKey)({ email, subject }) });
         if (existOtp_ttl > 0) {
@@ -105,6 +158,25 @@ class AuthenticationService {
         }
         await this.sendEmailOtp({ email, subject: email_enum_js_1.EmailSubjectEnum.CONFIRM_EMAIL });
         return;
+    }
+    ;
+    async login(inputs, issuer) {
+        const { email, password } = inputs;
+        const account = await this.userRepository.findOne({
+            filter: {
+                email,
+                provider: user_enum_js_1.ProviderEnum.SYSTEM,
+                confrimEmail: { $exists: true },
+            },
+        });
+        if (!account) {
+            throw new domain_exception_js_1.NotFoundException("invalid login credentials");
+        }
+        const match = await (0, hash_security_js_1.compare)(password, account.password);
+        if (!match) {
+            throw new domain_exception_js_1.NotFoundException("invalid login credentials");
+        }
+        return await this.tokenService.createLoginCredentials({ user: account, issuer });
     }
     ;
 }

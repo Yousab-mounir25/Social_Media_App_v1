@@ -1,7 +1,7 @@
 import { ConfirmEmailDto, LoginDto, ResendConfirmEmailDto, SignupDto } from "./DTO/authentication.dto.js";
 import { IUser } from "../../common/interface/user.interface.js";
 import { HUser, UserModel } from "../../DB/model/user.model.js";
-import { BadRequestException, ConflictException, NotFoundException, TooManyRequestException } from "../../common/exception/domain.exception.js";
+import { BadRequestException, ConflictException, NotFoundException, TooManyRequestException, UnAuthorizedException } from "../../common/exception/domain.exception.js";
 import { Model } from "mongoose";
 import { UserRepository } from './../../common/repository/user.repository';
 import {cacheService, CacheService } from './../../common/services/cache.services';
@@ -13,39 +13,76 @@ import { createOtp } from './../../common/utils/index.js';
 import { encryption } from "../../common/security/encryption.security.js";
 import { ProviderEnum } from "../../common/enum/user.enum.js";
 import { tokenService, TokenService } from './../../common/services/token.services';
-import { ILoginResponse } from "./entities/auth.entities.js";
+import { ILoginResponse, ISignupWithGoogle } from "./entities/auth.entities.js";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
+import { WEB_CLIENT_IDS } from "../../config.js";
 
 export class AuthenticationService {
 
   private userRepository :UserRepository
   private cacheService:CacheService
   private tokenService:TokenService
+  private client :OAuth2Client
   constructor() {
     this.cacheService = cacheService
     this.userRepository = new UserRepository()
     this.tokenService = tokenService
+    this.client = new OAuth2Client()
   }
-  // signup = async ({username , email , password , confirmPassword}: SignupDto['body']): Promise<any> => {
-  //   const user =await this.userRepository.findOne({
-  //     filter:{email},
-  //     options:{skip:1},
-  //     projection:{email:1}
-  //   })
-  //   if(user){
-  //     throw new ConflictException("User already exist")
-  //   }
-  //   const account:HUser[] = await this.userRepository.create({
-  //     data:[{
-  //       username ,
-  //        email ,
-  //         password: await hash(password) , 
-  //         confirmPassword
-  //     }],
-      
-  //   })
-  //   return account
-  // };
+  async verifyGoogleAccount(idToken:string):Promise<TokenPayload> {
+  let ticket;
+  try {
+    ticket = await this.client.verifyIdToken({
+      idToken,
+      audience: WEB_CLIENT_IDS, // Specify the CLIENT_ID of the app that accesses the backend
+    });
+  } catch (error) {
+    throw new UnAuthorizedException("invalid google token");
+  }
+  const payload = ticket.getPayload();
+  if (!payload?.email_verified) {
+    throw new BadRequestException("not verified email");
+  }
+  return payload;
+}
 
+// export const loginWithGoogle = async (user, issuer) => {
+//   return await createLoginCredentials({user:existingUser ,issuer})
+// }
+
+ async signupWithGmail({ idToken}:{idToken:string}, issuer:string ):Promise<ISignupWithGoogle>  {
+  //after i receive the idToken from the frontend
+  //I talked to google to verify the token , then i receive from google the payload that contain the data
+  const { email, name, picture } = await this.verifyGoogleAccount(idToken);
+  const existAccount = await this.userRepository.findOne({
+    filter: { email:email as string},
+  });
+  if (existAccount) {
+    if (existAccount.provider != ProviderEnum.GOOGLE) {
+      throw new ConflictException("invalid account provider");
+    }
+    //login wit google
+    return {
+      status: 200,
+      data: await this.tokenService.createLoginCredentials({ user: existAccount, issuer }),
+    };
+  }
+  
+  //if not exist --> add user
+  const user = await this.userRepository.create({
+    data: {
+      email,
+      username: name,
+      image: picture,
+      confirmEmail: new Date(),
+      provider: ProviderEnum.GOOGLE,
+    },
+  });
+  return {
+    status: 201,
+    data: await this.tokenService.createLoginCredentials({ user  , issuer }),
+  };
+};
 
   
 

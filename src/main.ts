@@ -3,14 +3,13 @@ import { authenticationController } from "./modules";
 import { globalErrorHandling } from "./middleware/index";
 import { PORT } from "./config.js";
 import { bootstrapDB } from "./DB/connection.db.js";
-import { sendEmail } from "./common/utils/Email/send.email.js";
-import { EmailSubjectEnum } from "./common/enum/email.enum.js";
 import { userController } from "./modules/user/index.js";
+import cors from 'cors'
 const app = express()
 
 
 bootstrapDB(app , PORT)
-app.use(express.json())
+app.use(cors(),express.json())
 app.use('/auth' , authenticationController)
 app.use('/user' , userController)
 

@@ -8,17 +8,13 @@ const modules_1 = require("./modules");
 const index_1 = require("./middleware/index");
 const config_js_1 = require("./config.js");
 const connection_db_js_1 = require("./DB/connection.db.js");
-const send_email_js_1 = require("./common/utils/Email/send.email.js");
-const email_enum_js_1 = require("./common/enum/email.enum.js");
+const index_js_1 = require("./modules/user/index.js");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 (0, connection_db_js_1.bootstrapDB)(app, config_js_1.PORT);
-app.use(express_1.default.json());
+app.use((0, cors_1.default)(), express_1.default.json());
 app.use('/auth', modules_1.authenticationController);
-(0, send_email_js_1.sendEmail)({
-    subject: email_enum_js_1.EmailSubjectEnum.CONFIRM_EMAIL,
-    to: ["yousab.mounir@gmail.com"],
-    html: "Hello yousab"
-});
+app.use('/user', index_js_1.userController);
 app.all('/', (req, res, next) => {
     return res.status(200).json({ message: "Done" });
 });

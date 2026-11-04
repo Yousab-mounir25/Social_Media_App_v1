@@ -41,7 +41,12 @@ const authentication_service_js_1 = __importDefault(require("./authentication.se
 const response_middleware_js_1 = require("../../middleware/response.middleware.js");
 const validation_middleware_js_1 = require("../../middleware/validation.middleware.js");
 const validators = __importStar(require("./authentication.validation.js"));
+const issuer_js_1 = require("../../common/utils/issuer.js");
 const router = (0, express_1.Router)();
+router.post('/signup-with-gmail', (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
+    const { data, status } = await authentication_service_js_1.default.signupWithGmail(req.body, (0, issuer_js_1.getIssuer)(req));
+    return { data, status: 201 };
+}));
 router.post('/signup', (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
     const data = await authentication_service_js_1.default.signup(req.body);
     return { data, status: 201 };
@@ -51,5 +56,9 @@ router.patch("/confirm-email", (0, validation_middleware_js_1.validation)(valida
 }));
 router.patch("/resend-confirm-email", (0, validation_middleware_js_1.validation)(validators.resendConfirmEmail), (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
     return await authentication_service_js_1.default.resendConfirmEmail(req.body);
+}));
+router.post("/login", (0, validation_middleware_js_1.validation)(validators.login), (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await authentication_service_js_1.default.login(req.validate.body, (0, issuer_js_1.getIssuer)(req));
+    return { data, status: 200 };
 }));
 exports.default = router;
