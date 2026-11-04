@@ -2,3 +2,4 @@ node_modules
 assignment.excalidraw
 .env.development
 .env.production
+assets

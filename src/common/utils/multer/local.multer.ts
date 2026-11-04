@@ -1,16 +1,19 @@
 import multer from "multer";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileTypeFromBuffer } from "file-type";
 import { BadRequestException } from "../../exception/domain.exception.js";
 import { Request } from "express";
+import { StorageApproachEnum } from "../../enum/multer.enum.js";
+import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 
 export const fileValidation = {
   image: ["image/jpeg", "image/png", "image/gif"],
   files: ["application/pdf", "application/json"],
 };
-export const localFileUpload = ({ maxSize = 5 } : {maxSize?:number}) => {
+export const localFileUpload = ({ maxSize = 5 , storageApproach=StorageApproachEnum.MEMORY } : {maxSize?:number , storageApproach?:StorageApproachEnum}) => {
   //   const storage = multer.diskStorage({
   //     destination: function (req, file, cb) {
   //       cb(null, "./assets");
@@ -28,7 +31,14 @@ export const localFileUpload = ({ maxSize = 5 } : {maxSize?:number}) => {
   //     }
   //   }
 
-  const storage = multer.memoryStorage();
+  const storage = storageApproach==StorageApproachEnum.MEMORY? multer.memoryStorage() : multer.diskStorage({
+    destination(req,file,callback){
+      callback(null , tmpdir()) // windows+R
+    },
+    filename(req,file,callback){
+      callback(null , randomUUID()+file.originalname)
+    }
+  })
 
   return multer({
     storage,
@@ -42,14 +52,23 @@ export const processFile = async ({
   file,
   validation 
 }:{customPath?:string, file:Express.Multer.File, validation:string[]}) => {
+
+  if(file.path){
+    file.buffer = await readFile(file.path)
+  }
+
   const result = await fileTypeFromBuffer(file.buffer);
   // console.log({ result });
   if (!result || !validation.includes(result.mime)) {
+    await unlink(file.path);
     throw new BadRequestException("invalid file formats");
   } else {
     await mkdir(resolve(`./assets/${customPath}`), { recursive: true });
     const uniqueFilePath = `assets/${customPath}/${randomUUID()}.${result.ext}`;
     await writeFile(resolve(`./${uniqueFilePath}`), file.buffer);
+    if(file.path) {
+      await unlink(file.path);
+    }
     file.path = uniqueFilePath;
   }
   return file;

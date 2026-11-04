@@ -10,12 +10,21 @@ const promises_1 = require("node:fs/promises");
 const node_path_1 = require("node:path");
 const file_type_1 = require("file-type");
 const domain_exception_js_1 = require("../../exception/domain.exception.js");
+const multer_enum_js_1 = require("../../enum/multer.enum.js");
+const node_os_1 = require("node:os");
 exports.fileValidation = {
     image: ["image/jpeg", "image/png", "image/gif"],
     files: ["application/pdf", "application/json"],
 };
-const localFileUpload = ({ maxSize = 5 }) => {
-    const storage = multer_1.default.memoryStorage();
+const localFileUpload = ({ maxSize = 5, storageApproach = multer_enum_js_1.StorageApproachEnum.MEMORY }) => {
+    const storage = storageApproach == multer_enum_js_1.StorageApproachEnum.MEMORY ? multer_1.default.memoryStorage() : multer_1.default.diskStorage({
+        destination(req, file, callback) {
+            callback(null, (0, node_os_1.tmpdir)());
+        },
+        filename(req, file, callback) {
+            callback(null, (0, node_crypto_1.randomUUID)() + file.originalname);
+        }
+    });
     return (0, multer_1.default)({
         storage,
         limits: { fileSize: maxSize * 1024 * 1024 },
@@ -23,14 +32,21 @@ const localFileUpload = ({ maxSize = 5 }) => {
 };
 exports.localFileUpload = localFileUpload;
 const processFile = async ({ customPath = "general", file, validation }) => {
+    if (file.path) {
+        file.buffer = await (0, promises_1.readFile)(file.path);
+    }
     const result = await (0, file_type_1.fileTypeFromBuffer)(file.buffer);
     if (!result || !validation.includes(result.mime)) {
+        await (0, promises_1.unlink)(file.path);
         throw new domain_exception_js_1.BadRequestException("invalid file formats");
     }
     else {
         await (0, promises_1.mkdir)((0, node_path_1.resolve)(`./assets/${customPath}`), { recursive: true });
         const uniqueFilePath = `assets/${customPath}/${(0, node_crypto_1.randomUUID)()}.${result.ext}`;
         await (0, promises_1.writeFile)((0, node_path_1.resolve)(`./${uniqueFilePath}`), file.buffer);
+        if (file.path) {
+            await (0, promises_1.unlink)(file.path);
+        }
         file.path = uniqueFilePath;
     }
     return file;

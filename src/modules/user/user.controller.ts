@@ -6,6 +6,7 @@ import { TokenTypeEnum } from "../../common/enum/security.enum.js";
 import { getIssuer } from "../../common/utils/issuer.js";
 import { uploadMiddleware } from "../../middleware/multer.middleware.js";
 import { fileValidation, localFileUpload } from "../../common/utils/index.js";
+import{StorageApproachEnum} from '../../common/enum'
 const router  =Router()
 
 
@@ -38,8 +39,8 @@ router.post('/rotate-token' ,
 router.patch('/profile-image' , 
     authentication(),
     uploadMiddleware({
-        multerMiddleware:localFileUpload({}).single("attachment"),
-        validation:fileValidation.image,
+        multerMiddleware:localFileUpload({storageApproach:StorageApproachEnum.DISK}).single("attachment"),
+        validation:fileValidation.files,
         customPath:"User"
     }),
     responseFormatter(

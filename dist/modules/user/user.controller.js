@@ -11,6 +11,7 @@ const security_enum_js_1 = require("../../common/enum/security.enum.js");
 const issuer_js_1 = require("../../common/utils/issuer.js");
 const multer_middleware_js_1 = require("../../middleware/multer.middleware.js");
 const index_js_1 = require("../../common/utils/index.js");
+const enum_1 = require("../../common/enum");
 const router = (0, express_1.Router)();
 router.get('/', (0, authentication_middleware_js_1.authentication)(), (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
     return { data: req.user };
@@ -24,8 +25,8 @@ router.post('/rotate-token', (0, authentication_middleware_js_1.authentication)(
     return data;
 }));
 router.patch('/profile-image', (0, authentication_middleware_js_1.authentication)(), (0, multer_middleware_js_1.uploadMiddleware)({
-    multerMiddleware: (0, index_js_1.localFileUpload)({}).single("attachment"),
-    validation: index_js_1.fileValidation.image,
+    multerMiddleware: (0, index_js_1.localFileUpload)({ storageApproach: enum_1.StorageApproachEnum.DISK }).single("attachment"),
+    validation: index_js_1.fileValidation.files,
     customPath: "User"
 }), (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
     return { data: req.file };
