@@ -12,6 +12,7 @@ const index_js_1 = require("./modules/user/index.js");
 const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 (0, connection_db_js_1.bootstrapDB)(app, config_js_1.PORT);
+app.use('/assets', express_1.default.static('./assets'));
 app.use((0, cors_1.default)(), express_1.default.json());
 app.use('/auth', modules_1.authenticationController);
 app.use('/user', index_js_1.userController);

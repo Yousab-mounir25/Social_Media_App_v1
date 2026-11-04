@@ -4,6 +4,8 @@ import { responseFormatter } from "../../middleware/response.middleware.js";
 import userService from "./user.service.js";
 import { TokenTypeEnum } from "../../common/enum/security.enum.js";
 import { getIssuer } from "../../common/utils/issuer.js";
+import { uploadMiddleware } from "../../middleware/multer.middleware.js";
+import { fileValidation, localFileUpload } from "../../common/utils/index.js";
 const router  =Router()
 
 
@@ -30,6 +32,20 @@ router.post('/rotate-token' ,
         async (req:Request , res:Response , next:NextFunction)=>{
             const data = await userService.rotateToken(req.payload, req.user , getIssuer(req))
             return data
+        }
+    )
+)
+router.patch('/profile-image' , 
+    authentication(),
+    uploadMiddleware({
+        multerMiddleware:localFileUpload({}).single("attachment"),
+        validation:fileValidation.image,
+        customPath:"User"
+    }),
+    responseFormatter(
+        async (req:Request , res:Response , next:NextFunction)=>{
+        
+            return {data:req.file}
         }
     )
 )

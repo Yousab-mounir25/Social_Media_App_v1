@@ -9,6 +9,7 @@ const app = express()
 
 
 bootstrapDB(app , PORT)
+app.use('/assets'  , express.static('./assets'))
 app.use(cors(),express.json())
 app.use('/auth' , authenticationController)
 app.use('/user' , userController)

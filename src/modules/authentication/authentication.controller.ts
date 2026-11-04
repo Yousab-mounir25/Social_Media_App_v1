@@ -22,7 +22,7 @@ router.post('/signup-with-gmail' ,
 )
 )
 router.post('/signup' , 
-    // validation(validators.signup),
+    validation(validators.signup),
     responseFormatter(
     async(req:Request,res:Response,next:NextFunction):Promise<IResponse<IUser>>=>{
         const data = await authService.signup(req.body)

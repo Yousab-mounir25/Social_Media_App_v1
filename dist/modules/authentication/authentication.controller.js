@@ -47,7 +47,7 @@ router.post('/signup-with-gmail', (0, response_middleware_js_1.responseFormatter
     const { data, status } = await authentication_service_js_1.default.signupWithGmail(req.body, (0, issuer_js_1.getIssuer)(req));
     return { data, status: 201 };
 }));
-router.post('/signup', (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
+router.post('/signup', (0, validation_middleware_js_1.validation)(validators.signup), (0, response_middleware_js_1.responseFormatter)(async (req, res, next) => {
     const data = await authentication_service_js_1.default.signup(req.body);
     return { data, status: 201 };
 }));
