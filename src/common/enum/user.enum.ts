@@ -10,3 +10,8 @@ export enum ProviderEnum  {
     SYSTEM,
     GOOGLE
 }
+export enum AccountStatusEnum  {
+    ARCHIVE,
+    ACTIVE
+   
+}

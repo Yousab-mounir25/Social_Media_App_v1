@@ -24,6 +24,11 @@ export abstract class DatabaseRepository<TRawDocType>{
         return doc as HydratedDocument<TRawDocType>
     }
 
+    // Insert Many
+    async insertMany({data}:{data:AnyKeys<TRawDocType>[]}){
+        return await this.model.insertMany({data:data})
+    }
+
 
     //FINDERS
          async findOne({  

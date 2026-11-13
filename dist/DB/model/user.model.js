@@ -50,7 +50,13 @@ const userSchema = new mongoose_1.default.Schema({
         enum: user_enum_js_1.ProviderEnum,
         default: user_enum_js_1.ProviderEnum.SYSTEM,
     },
-    changeCredentialsTime: Date
+    changeCredentialsTime: Date,
+    status: {
+        type: Number,
+        enum: user_enum_js_1.AccountStatusEnum,
+        default: user_enum_js_1.AccountStatusEnum.ACTIVE
+    },
+    changeStatusAt: Date,
 }, {
     timestamps: true,
     strict: false,
@@ -68,5 +74,41 @@ userSchema
 })
     .get(function () {
     return `${this.firstName} ${this.lastName}`;
+});
+userSchema.pre(['findOne', 'find', 'countDocuments'], function () {
+    const query = this.getFilter();
+    if (query.paranoid == false) {
+        this.setQuery({ ...query });
+    }
+    else {
+        this.setQuery({ ...query, status: { $ne: user_enum_js_1.AccountStatusEnum.ARCHIVE } });
+    }
+    console.log({ post: this.getFilter() });
+});
+userSchema.pre(['updateOne', 'updateMany', 'findOneAndUpdate'], function () {
+    const query = this.getFilter();
+    const update = this.getUpdate();
+    if (update.status == user_enum_js_1.AccountStatusEnum.ACTIVE) {
+        this.setQuery({ ...query, status: { $eq: user_enum_js_1.AccountStatusEnum.ARCHIVE } });
+    }
+    else if (update.status == user_enum_js_1.AccountStatusEnum.ARCHIVE) {
+        this.setQuery({ ...query, status: { $ne: user_enum_js_1.AccountStatusEnum.ARCHIVE } });
+    }
+    if (!update.status && query.paranoid != false) {
+        this.setQuery({ ...query, status: { $ne: user_enum_js_1.AccountStatusEnum.ARCHIVE } });
+    }
+    this.setUpdate({
+        ...update,
+        ...(update.status ? { changeStatusAt: new Date() } : {})
+    });
+});
+userSchema.pre(['deleteOne', 'deleteMany', 'findOneAndDelete'], function () {
+    const query = this.getFilter();
+    if (!query.force) {
+        this.setQuery({ ...query, status: { $eq: user_enum_js_1.AccountStatusEnum.ARCHIVE } });
+    }
+});
+userSchema.pre('insertMany', function (docs) {
+    console.log(this);
 });
 exports.UserModel = mongoose_1.default.models.User || mongoose_1.default.model("User", userSchema);

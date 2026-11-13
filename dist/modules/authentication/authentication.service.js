@@ -9,7 +9,6 @@ const send_email_js_1 = require("../../common/utils/Email/send.email.js");
 const email_enum_js_1 = require("../../common/enum/email.enum.js");
 const email_event_js_1 = require("../../common/utils/Email/email.event.js");
 const index_js_1 = require("./../../common/utils/index.js");
-const encryption_security_js_1 = require("../../common/security/encryption.security.js");
 const user_enum_js_1 = require("../../common/enum/user.enum.js");
 const token_services_1 = require("./../../common/services/token.services");
 const google_auth_library_1 = require("google-auth-library");
@@ -108,9 +107,7 @@ class AuthenticationService {
         const user = await this.userRepository.createOne({
             data: {
                 username,
-                email,
-                password: await (0, hash_security_js_1.hash)(password),
-                phone: await (0, encryption_security_js_1.encryption)(phone),
+                email, password, phone
             },
         });
         await this.sendEmailOtp({ email, subject: email_enum_js_1.EmailSubjectEnum.CONFIRM_EMAIL });

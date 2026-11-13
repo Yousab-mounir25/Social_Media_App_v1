@@ -126,9 +126,9 @@ async signup (inputs : SignupDto['body']) :Promise<IUser> {
   const user = await this.userRepository.createOne({
     data: {
       username,
-      email,
-      password: await hash(  password ), //hash the password before saving to the database
-      phone: await encryption(phone), //encrypt the phone number before saving to the database
+      email,password,phone
+      // password: await hash(  password ), //hash the password before saving to the database
+      // phone: await encryption(phone), //encrypt the phone number before saving to the database
     },
   });
 
