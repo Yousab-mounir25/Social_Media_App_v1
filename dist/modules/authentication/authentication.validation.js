@@ -8,6 +8,7 @@ const loginSchema = (lang) => {
     return zod_1.z.strictObject({
         email: validation_js_1.generalValidationFields.email(lang),
         password: validation_js_1.generalValidationFields.password(lang),
+        FCM: zod_1.z.string().optional()
     });
 };
 exports.loginSchema = loginSchema;

@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModel = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const user_enum_js_1 = require("../../common/enum/user.enum.js");
+const hash_security_js_1 = require("../../common/security/hash.security.js");
+const encryption_security_js_1 = require("../../common/security/encryption.security.js");
 const userSchema = new mongoose_1.default.Schema({
     firstName: {
         type: String,
@@ -30,6 +32,7 @@ const userSchema = new mongoose_1.default.Schema({
             return this.provider == user_enum_js_1.ProviderEnum.SYSTEM;
         },
     },
+    friends: [{ type: mongoose_1.default.Types.ObjectId, ref: "User" }],
     phone: String,
     DOB: Date,
     confirmEmail: Date,
@@ -74,6 +77,23 @@ userSchema
 })
     .get(function () {
     return `${this.firstName} ${this.lastName}`;
+});
+userSchema.pre('validate', function () {
+    if (this.provider == user_enum_js_1.ProviderEnum.GOOGLE && this.password) {
+        throw new Error("Google account cannot hold password");
+    }
+});
+userSchema.pre('save', async function () {
+    this.wasNew = this.isNew;
+    if (this.isModified("password")) {
+        this.password = await (0, hash_security_js_1.hash)(this.password);
+    }
+    if (this.isModified("phone")) {
+        this.phone = await (0, encryption_security_js_1.encryption)(this.phone);
+    }
+});
+userSchema.post('save', async function (doc) {
+    doc.phone = await (0, encryption_security_js_1.decryption)(this.phone);
 });
 userSchema.pre(['findOne', 'find', 'countDocuments'], function () {
     const query = this.getFilter();

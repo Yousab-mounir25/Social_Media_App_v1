@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AccountStatusEnum = exports.ProviderEnum = exports.RoleEnum = exports.GenderEnum = void 0;
+exports.AccountStatusEnum = exports.ProviderEnum = exports.FriendRequestStatusEnum = exports.RoleEnum = exports.GenderEnum = void 0;
 var GenderEnum;
 (function (GenderEnum) {
     GenderEnum[GenderEnum["MALE"] = 0] = "MALE";
@@ -11,6 +11,11 @@ var RoleEnum;
     RoleEnum[RoleEnum["USER"] = 0] = "USER";
     RoleEnum[RoleEnum["ADMIN"] = 1] = "ADMIN";
 })(RoleEnum || (exports.RoleEnum = RoleEnum = {}));
+var FriendRequestStatusEnum;
+(function (FriendRequestStatusEnum) {
+    FriendRequestStatusEnum[FriendRequestStatusEnum["PENDING"] = 0] = "PENDING";
+    FriendRequestStatusEnum[FriendRequestStatusEnum["ACCEPTED"] = 1] = "ACCEPTED";
+})(FriendRequestStatusEnum || (exports.FriendRequestStatusEnum = FriendRequestStatusEnum = {}));
 var ProviderEnum;
 (function (ProviderEnum) {
     ProviderEnum[ProviderEnum["SYSTEM"] = 0] = "SYSTEM";

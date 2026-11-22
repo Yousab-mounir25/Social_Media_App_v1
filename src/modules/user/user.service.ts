@@ -1,18 +1,27 @@
 import { LogoutEnum } from "../../common/enum/security.enum.js";
-import { ConflictException } from "../../common/exception/domain.exception.js";
+import { ConflictException, NotFoundException } from "../../common/exception/domain.exception.js";
 import { cacheService, CacheService } from "../../common/services/cache.services.js";
 import { JwtPayloadType, tokenService, TokenService} from "../../common/services/token.services.js";
 import { ACCESS_TOKEN_EXPIRESIN } from "../../config.js";
 import { HUser } from "../../DB/model/user.model.js";
+import { AcceptFriendRequestDTO, SendFriendRequestDTO } from "./DTO/user.dto.js";
+import { UserRepository } from "../../common/repository/user.repository.js";
+import { FriendRequestRepository } from "../../common/repository/friendRequest.repository.js";
+import { IFriendRequest } from "../../common/interface/freindRequest.interface.js";
+import { FriendRequestStatusEnum } from "../../common/enum/user.enum.js";
 
 
 
 export class UserService {
     private readonly tokenService: TokenService
     private readonly cacheService:CacheService
+    private readonly friendRequest : FriendRequestRepository  
+    private readonly userRepository : UserRepository
     constructor(){
         this.tokenService = tokenService
         this.cacheService = cacheService
+        this.friendRequest = new FriendRequestRepository()
+        this.userRepository = new UserRepository()
     }
 
 
@@ -43,5 +52,101 @@ async logout (payload:JwtPayloadType, user:HUser , {action=LogoutEnum.DEVICE}:{a
   }
  return
 };
+
+
+
+async sendFriendRequest({ receiverId , note}:SendFriendRequestDTO , user:HUser):Promise<IFriendRequest>{
+  
+  if(receiverId.toString()== user._id.toString()){
+    throw new ConflictException("you cannot send a friend request to yourself")
+  }
+  //check if the receiver exist
+  const receiver = await this.userRepository.findOne({
+    filter:{_id:receiverId}
+  })
+  if(!receiver){
+    throw new NotFoundException("receiver is not exist")
+  }
+  const checkDuplicate = await this.friendRequest.findOne({
+    filter:{
+      senderId:{$in: [user._id , receiverId] },
+      receiverId: {$in:[user._id , receiverId]}
+    }
+  })
+  
+  if(checkDuplicate){
+    throw new ConflictException("Request already exists")
+  }
+
+  const request = await this.friendRequest.create({
+    data:{
+      senderId:user._id,
+      receiverId:receiver._id,
+      note
+    }
+  })
+
+  return request.toJSON()
+
+}
+async acceptFriendRequest({ friendRequestId}:AcceptFriendRequestDTO , user:HUser):Promise<IFriendRequest>{
+  
+  const request = await this.friendRequest.findOneAndUpdate({
+    filter:{
+      _id:friendRequestId,
+      status:FriendRequestStatusEnum.PENDING,
+      receiverId:user._id
+    },
+    update:{
+      status:FriendRequestStatusEnum.ACCEPTED
+    }
+  })
+
+  if(!request){
+    throw new NotFoundException("invalid request")
+  }
+
+  await Promise.all([
+    this.userRepository.updateOne({
+      filter:{_id:request.senderId},
+      update:{
+        $addToSet:{friends:request.receiverId}
+      }
+    }),
+    this.userRepository.updateOne({
+      filter:{_id:request.receiverId},
+      update:{
+        $addToSet:{friends:request.senderId}
+      }
+    }),
+  ])
+
+
+  return request.toJSON()
+
+}
+async cancelFriendRequest({ friendRequestId}:AcceptFriendRequestDTO , user:HUser):Promise<IFriendRequest>{
+  
+  const request = await this.friendRequest.findOneAndDelete({
+    filter:{
+      _id:friendRequestId,
+      status:FriendRequestStatusEnum.PENDING,
+      $or:[
+        {receiverId:user._id},
+        {senderId:user._id}
+      ]
+    },
+  })
+
+  if(!request){
+    throw new NotFoundException("invalid request")
+  }
+  return request.toJSON()
+
+}
+
+
+
+
 }
 export default new UserService()

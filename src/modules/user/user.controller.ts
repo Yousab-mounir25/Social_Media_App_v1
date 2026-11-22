@@ -7,6 +7,11 @@ import { getIssuer } from "../../common/utils/issuer.js";
 import { uploadMiddleware } from "../../middleware/multer.middleware.js";
 import { fileValidation, localFileUpload } from "../../common/utils/index.js";
 import{StorageApproachEnum} from '../../common/enum'
+import * as validators from './user.validation.js'
+import { validation } from "../../middleware/validation.middleware.js";
+import { IResponse } from "../../common/interface/success.interface.js";
+import { IFriendRequest } from "../../common/interface/freindRequest.interface.js";
+import { AcceptFriendRequestDTO } from "./DTO/user.dto.js";
 const router  =Router()
 
 
@@ -47,6 +52,37 @@ router.patch('/profile-image' ,
         async (req:Request , res:Response , next:NextFunction)=>{
         
             return {data:req.file}
+        }
+    )
+)
+
+router.post('/send-friend-request' , 
+    authentication(),
+    validation(validators.sendFriendRequest),
+    responseFormatter(
+        async (req:Request , res:Response , next:NextFunction):Promise<IResponse<IFriendRequest>>=>{
+            const request = await userService.sendFriendRequest(req.body, req.user)
+            return {data:request}
+        }
+    )
+)
+router.patch('/accept-friend-request/:friendRequestId' , 
+    authentication(),
+    validation(validators.acceptFriendRequest),
+    responseFormatter(
+        async (req:Request , res:Response , next:NextFunction):Promise<IResponse<IFriendRequest>>=>{
+            const request = await userService.acceptFriendRequest(req.params as AcceptFriendRequestDTO, req.user)
+            return {data:request}
+        }
+    )
+)
+router.patch('/cancel-friend-request/:friendRequestId' , 
+    authentication(),
+    validation(validators.acceptFriendRequest),
+    responseFormatter(
+        async (req:Request , res:Response , next:NextFunction):Promise<IResponse<IFriendRequest>>=>{
+            const request = await userService.cancelFriendRequest(req.params as AcceptFriendRequestDTO, req.user)
+            return {data:request}
         }
     )
 )

@@ -16,15 +16,18 @@ import { tokenService, TokenService } from './../../common/services/token.servic
 import { ILoginResponse, ISignupWithGoogle } from "./entities/auth.entities.js";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { WEB_CLIENT_IDS } from "../../config.js";
+import { notificationService, NotificationService } from "../../common/services/notification.services.js";
 
 export class AuthenticationService {
 
   private userRepository :UserRepository
+  private notificationService :NotificationService
   private cacheService:CacheService
   private tokenService:TokenService
   private client :OAuth2Client
   constructor() {
     this.cacheService = cacheService
+    this.notificationService=notificationService
     this.userRepository = new UserRepository()
     this.tokenService = tokenService
     this.client = new OAuth2Client()
@@ -190,8 +193,8 @@ async resendConfirmEmail  (inputs:ResendConfirmEmailDto):Promise<void> {
   return;
 };
 
- async login  (inputs:LoginDto, issuer:string):Promise<ILoginResponse> {
-  const { email, password } = inputs;
+ async login  ({email,password , FCM}:LoginDto, issuer:string ):Promise<ILoginResponse> {
+  // const { email, password } = inputs;
   const account = await this.userRepository.findOne({
     filter: {
       email,
@@ -205,6 +208,20 @@ async resendConfirmEmail  (inputs:ResendConfirmEmailDto):Promise<void> {
   const match = await compare(password, account.password); //check for password
   if (!match) {
     throw new NotFoundException("invalid login credentials");
+  }
+  await this.notificationService.sendNotifications({
+    tokens:await this.notificationService.getFCM({userId:account._id}),
+    notification:{
+      title:"Login session",
+      body:"new login"
+    }
+
+  })
+  if(FCM){
+    await this.notificationService.addFCM({
+      userId:account._id,
+      FCM
+    })
   }
   return await this.tokenService.createLoginCredentials({ user: account, issuer });
 };

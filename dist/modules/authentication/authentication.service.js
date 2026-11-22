@@ -13,13 +13,16 @@ const user_enum_js_1 = require("../../common/enum/user.enum.js");
 const token_services_1 = require("./../../common/services/token.services");
 const google_auth_library_1 = require("google-auth-library");
 const config_js_1 = require("../../config.js");
+const notification_services_js_1 = require("../../common/services/notification.services.js");
 class AuthenticationService {
     userRepository;
+    notificationService;
     cacheService;
     tokenService;
     client;
     constructor() {
         this.cacheService = cache_services_1.cacheService;
+        this.notificationService = notification_services_js_1.notificationService;
         this.userRepository = new user_repository_1.UserRepository();
         this.tokenService = token_services_1.tokenService;
         this.client = new google_auth_library_1.OAuth2Client();
@@ -157,8 +160,7 @@ class AuthenticationService {
         return;
     }
     ;
-    async login(inputs, issuer) {
-        const { email, password } = inputs;
+    async login({ email, password, FCM }, issuer) {
         const account = await this.userRepository.findOne({
             filter: {
                 email,
@@ -172,6 +174,19 @@ class AuthenticationService {
         const match = await (0, hash_security_js_1.compare)(password, account.password);
         if (!match) {
             throw new domain_exception_js_1.NotFoundException("invalid login credentials");
+        }
+        await this.notificationService.sendNotifications({
+            tokens: await this.notificationService.getFCM({ userId: account._id }),
+            notification: {
+                title: "Login session",
+                body: "new login"
+            }
+        });
+        if (FCM) {
+            await this.notificationService.addFCM({
+                userId: account._id,
+                FCM
+            });
         }
         return await this.tokenService.createLoginCredentials({ user: account, issuer });
     }

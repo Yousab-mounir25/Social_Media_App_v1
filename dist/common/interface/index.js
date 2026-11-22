@@ -17,3 +17,4 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./error.interface.js"), exports);
 __exportStar(require("./success.interface.js"), exports);
 __exportStar(require("./user.interface.js"), exports);
+__exportStar(require("./freindRequest.interface.js"), exports);

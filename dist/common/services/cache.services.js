@@ -60,6 +60,18 @@ class CacheService {
     async incrBy({ key, value = 1 }) {
         return await this.client.incrBy(key, value);
     }
+    async sAdd({ key, value }) {
+        return await this.client.sAdd(key, value);
+    }
+    async sRem({ key, value }) {
+        return await this.client.sRem(key, value);
+    }
+    async sMembers({ key }) {
+        return await this.client.sMembers(key);
+    }
+    async sCard({ key }) {
+        return await this.client.sCard(key);
+    }
 }
 exports.CacheService = CacheService;
 exports.cacheService = new CacheService();

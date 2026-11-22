@@ -6,6 +6,10 @@ export enum RoleEnum  {
     USER,
     ADMIN
 }
+export enum FriendRequestStatusEnum  {
+    PENDING,
+    ACCEPTED
+}
 export enum ProviderEnum  {
     SYSTEM,
     GOOGLE

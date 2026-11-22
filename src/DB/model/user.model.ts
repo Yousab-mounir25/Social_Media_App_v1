@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema <IUser>(
         return this.provider == ProviderEnum.SYSTEM
       },
     },
+    friends:[{type:mongoose.Types.ObjectId , ref:"User"}],
     phone: String,
     DOB: Date,
     confirmEmail: Date,
@@ -97,31 +98,31 @@ userSchema
   
 // })
 
-// userSchema.pre('validate' , function(){
-//   if(this.provider == ProviderEnum.GOOGLE && this.password){
-//     throw new Error("Google account cannot hold password")
-//   }
-// })
-// userSchema.pre('save' ,async function(this:HUser &{wasNew:boolean}){
-//   //  console.log(this.modifiedPaths())
-//   //  console.log(this.isDirectModified("extra.name"))
+userSchema.pre('validate' , function(){
+  if(this.provider == ProviderEnum.GOOGLE && this.password){
+    throw new Error("Google account cannot hold password")
+  }
+})
+userSchema.pre('save' ,async function(this:HUser &{wasNew:boolean}){
+  //  console.log(this.modifiedPaths())
+  //  console.log(this.isDirectModified("extra.name"))
 
-//   this.wasNew = this.isNew
-//   if(this.isModified("password")){
-//     this.password = await hash(this.password)
-//   }
-//   if(this.isModified("phone")){
-//     this.phone =await encryption(this.phone as string)
-//   }
+  this.wasNew = this.isNew
+  if(this.isModified("password")){
+    this.password = await hash(this.password)
+  }
+  if(this.isModified("phone")){
+    this.phone =await encryption(this.phone as string)
+  }
   
   
  
-// })
+})
 
-// userSchema.post('save',async function(doc){
-//   doc.phone= await decryption(this.phone as string)
+userSchema.post('save',async function(doc){
+  doc.phone= await decryption(this.phone as string)
 //  console.log( {p:(this as HUser & {wasNew:boolean}).wasNew})
-// })
+})
 
 
 // userSchema.pre('updateOne' ,{document:true , query:false} ,function(){

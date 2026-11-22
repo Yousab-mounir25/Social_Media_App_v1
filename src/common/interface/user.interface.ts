@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { AccountStatusEnum, GenderEnum, ProviderEnum, RoleEnum } from "../enum/user.enum.js";
 
 
@@ -11,6 +12,7 @@ export interface IUser {
         email:string,
         password:string,
         phone?: String,
+        friends:mongoose.Types.ObjectId[] | IUser[],
         DOB?: string,
         confirmEmail?: string,
         confirmPassword?: string,
