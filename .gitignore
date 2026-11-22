@@ -3,3 +3,4 @@ assignment.excalidraw
 .env.development
 .env.production
 assets
+config
